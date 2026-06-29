@@ -206,13 +206,13 @@ export function Navbar() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            ) : mounted ? (
               <Link href="/login" className="hidden md:block">
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
+                <Button variant="outline" size="sm">
+                  {t("login")}
                 </Button>
               </Link>
-            )}
+            ) : null}
 
             {/* Mobile menu toggle */}
             <Button

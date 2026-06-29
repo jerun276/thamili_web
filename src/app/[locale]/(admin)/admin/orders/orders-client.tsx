@@ -135,7 +135,7 @@ function OrderRow({
         €{order.total_amount?.toFixed(2)}
       </td>
       <td className="px-4 py-3 text-right">
-        {order.status === "confirmed" && !order.delivery_partner_id && (
+        {order.status === "confirmed" && !order.delivery_schedule?.[0]?.delivery_partner_id && (
           <select
             onChange={(e) => handleAssign(e.target.value)}
             disabled={updating}
@@ -147,6 +147,9 @@ function OrderRow({
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>
+        )}
+        {order.delivery_schedule?.[0]?.delivery_partner_id && (
+          <span className="text-xs text-green-600 font-medium">Assigned</span>
         )}
       </td>
     </tr>

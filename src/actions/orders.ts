@@ -79,7 +79,7 @@ export async function cancelOrderAction(orderId: string) {
 
   const { error } = await supabase
     .from("orders")
-    .update({ status: "canceled", updated_at: new Date().toISOString() })
+    .update({ status: "cancelled", updated_at: new Date().toISOString() })
     .eq("id", orderId);
 
   if (error) {
@@ -94,16 +94,40 @@ export async function cancelOrderAction(orderId: string) {
 export async function assignDeliveryPartnerAction(orderId: string, partnerId: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("orders")
-    .update({
-      delivery_partner_id: partnerId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", orderId);
+  // Check if a delivery schedule already exists for this order
+  const { data: existing } = await supabase
+    .from("delivery_schedule")
+    .select("id")
+    .eq("order_id", orderId)
+    .single();
 
-  if (error) {
-    return { error: error.message };
+  if (existing) {
+    // Update existing schedule
+    const { error } = await supabase
+      .from("delivery_schedule")
+      .update({
+        delivery_partner_id: partnerId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("order_id", orderId);
+
+    if (error) {
+      return { error: error.message };
+    }
+  } else {
+    // Create new delivery schedule
+    const { error } = await supabase
+      .from("delivery_schedule")
+      .insert({
+        order_id: orderId,
+        delivery_partner_id: partnerId,
+        delivery_date: new Date().toISOString().split("T")[0],
+        status: "assigned",
+      });
+
+    if (error) {
+      return { error: error.message };
+    }
   }
 
   revalidatePath("/admin/orders");

@@ -11,7 +11,7 @@ export default async function AdminOrdersPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("*, users(name, email), order_items(id)")
+    .select("*, users(name, email), order_items(id), delivery_schedule(delivery_partner_id, status)")
     .order("created_at", { ascending: false })
     .limit(50);
 

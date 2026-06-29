@@ -8,7 +8,10 @@ import { Link } from "@/i18n/config";
 import { useCartStore } from "@/store/cart-store";
 import { formatPrice, getProductPrice } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { PickupPointMap } from "@/components/shared/pickup-point-map";
+import type { PickupPoint } from "@/types";
 
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
@@ -19,6 +22,22 @@ export default function CheckoutPage() {
   const [step, setStep] = useState(0);
   const [deliveryMethod, setDeliveryMethod] = useState<"home" | "pickup">("home");
   const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("online");
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
+  const [selectedPickupPointId, setSelectedPickupPointId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (deliveryMethod === "pickup") {
+      const supabase = createClient();
+      supabase
+        .from("pickup_points")
+        .select("*")
+        .eq("country", country)
+        .eq("active", true)
+        .then(({ data }) => {
+          setPickupPoints((data as PickupPoint[]) || []);
+        });
+    }
+  }, [deliveryMethod, country]);
 
   const steps = [t("stepAddress"), t("stepDelivery"), t("stepPayment"), t("stepConfirm")];
 
@@ -86,7 +105,7 @@ export default function CheckoutPage() {
                     name="delivery"
                     value="home"
                     checked={deliveryMethod === "home"}
-                    onChange={() => setDeliveryMethod("home")}
+                    onChange={() => { setDeliveryMethod("home"); setSelectedPickupPointId(null); }}
                     className="text-green-600"
                   />
                   <div>
@@ -108,7 +127,60 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-500">Pick up from a nearby point</p>
                   </div>
                 </label>
-                <Button className="mt-4" onClick={() => setStep(2)}>
+
+                {deliveryMethod === "pickup" && (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Select a pickup point:
+                    </p>
+                    <PickupPointMap
+                      points={pickupPoints}
+                      country={country}
+                      selectedId={selectedPickupPointId}
+                      onSelect={setSelectedPickupPointId}
+                      height="280px"
+                    />
+                    {pickupPoints.length > 0 && (
+                      <div className="space-y-2">
+                        {pickupPoints.map((point) => (
+                          <label
+                            key={point.id}
+                            className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors ${
+                              selectedPickupPointId === point.id
+                                ? "border-green-600 bg-green-50 dark:bg-green-950"
+                                : "hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-900"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="pickup_point"
+                              value={point.id}
+                              checked={selectedPickupPointId === point.id}
+                              onChange={() => setSelectedPickupPointId(point.id)}
+                              className="text-green-600"
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-medium">{point.name}</p>
+                              <p className="text-xs text-gray-500">{point.address}</p>
+                            </div>
+                            <span className="text-sm font-medium text-green-700">
+                              €{point.delivery_fee.toFixed(2)}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                    {pickupPoints.length === 0 && (
+                      <p className="text-sm text-gray-500">No pickup points available in your country.</p>
+                    )}
+                  </div>
+                )}
+
+                <Button
+                  className="mt-4"
+                  onClick={() => setStep(2)}
+                  disabled={deliveryMethod === "pickup" && !selectedPickupPointId}
+                >
                   Continue
                 </Button>
               </CardContent>
@@ -173,7 +245,9 @@ export default function CheckoutPage() {
                 <Separator className="my-4" />
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span>Delivery: {deliveryMethod}</span>
+                    <span>Delivery: {deliveryMethod === "pickup"
+                      ? `Pickup — ${pickupPoints.find((p) => p.id === selectedPickupPointId)?.name || ""}`
+                      : "Home Delivery"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Payment: {paymentMethod === "cod" ? "Cash on Delivery" : "Online"}</span>
