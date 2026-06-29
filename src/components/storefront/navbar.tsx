@@ -6,6 +6,7 @@ import Image from "next/image";
 import { ShoppingCart, Menu, X, User, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { SearchModal } from "./search-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ export function Navbar() {
   const country = useCartStore((s) => s.country);
   const setCountry = useCartStore((s) => s.setCountry);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -152,7 +154,7 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
 
-            <Button variant="ghost" size="icon" aria-label="Search">
+            <Button variant="ghost" size="icon" aria-label="Search" onClick={() => setSearchOpen(true)}>
               <Search className="h-5 w-5" />
             </Button>
 
@@ -274,6 +276,8 @@ export function Navbar() {
           </div>
         )}
       </header>
+
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
     </>
   );
 }

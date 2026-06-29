@@ -12,10 +12,13 @@ export async function createProductAction(formData: FormData) {
     category: formData.get("category") as string,
     price_germany: parseFloat(formData.get("price_germany") as string),
     price_denmark: parseFloat(formData.get("price_denmark") as string),
-    stock_germany: parseInt(formData.get("stock_germany") as string),
-    stock_denmark: parseInt(formData.get("stock_denmark") as string),
+    stock_germany: parseFloat(formData.get("stock_germany") as string),
+    stock_denmark: parseFloat(formData.get("stock_denmark") as string),
     active: formData.get("active") === "true",
     image_url: (formData.get("image_url") as string) || null,
+    sell_type: (formData.get("sell_type") as string) || null,
+    unit: (formData.get("unit") as string) || null,
+    pack_size_grams: formData.get("pack_size_grams") ? parseFloat(formData.get("pack_size_grams") as string) : null,
   };
 
   const { error } = await supabase.from("products").insert(productData);
@@ -37,10 +40,14 @@ export async function updateProductAction(id: string, formData: FormData) {
     category: formData.get("category") as string,
     price_germany: parseFloat(formData.get("price_germany") as string),
     price_denmark: parseFloat(formData.get("price_denmark") as string),
-    stock_germany: parseInt(formData.get("stock_germany") as string),
-    stock_denmark: parseInt(formData.get("stock_denmark") as string),
+    stock_germany: parseFloat(formData.get("stock_germany") as string),
+    stock_denmark: parseFloat(formData.get("stock_denmark") as string),
     active: formData.get("active") === "true",
     image_url: (formData.get("image_url") as string) || null,
+    sell_type: (formData.get("sell_type") as string) || null,
+    unit: (formData.get("unit") as string) || null,
+    pack_size_grams: formData.get("pack_size_grams") ? parseFloat(formData.get("pack_size_grams") as string) : null,
+    updated_at: new Date().toISOString(),
   };
 
   const { error } = await supabase
@@ -59,7 +66,10 @@ export async function updateProductAction(id: string, formData: FormData) {
 export async function deleteProductAction(id: string) {
   const supabase = await createClient();
 
-  const { error } = await supabase.from("products").delete().eq("id", id);
+  const { error } = await supabase
+    .from("products")
+    .update({ is_deleted: true, active: false, updated_at: new Date().toISOString() })
+    .eq("id", id);
 
   if (error) {
     return { error: error.message };
@@ -74,7 +84,7 @@ export async function toggleProductActiveAction(id: string, active: boolean) {
 
   const { error } = await supabase
     .from("products")
-    .update({ active })
+    .update({ active, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) {
