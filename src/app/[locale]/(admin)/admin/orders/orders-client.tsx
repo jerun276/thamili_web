@@ -12,14 +12,14 @@ interface AdminOrdersClientProps {
   deliveryPartners: { id: string; name: string }[];
 }
 
-const STATUS_OPTIONS: OrderStatus[] = ["pending", "confirmed", "out_for_delivery", "delivered", "canceled"];
+const STATUS_OPTIONS: OrderStatus[] = ["pending", "confirmed", "out_for_delivery", "delivered", "cancelled"];
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "warning",
   confirmed: "default",
   out_for_delivery: "secondary",
   delivered: "default",
-  canceled: "destructive",
+  cancelled: "destructive",
 };
 
 export function AdminOrdersClient({ orders, deliveryPartners }: AdminOrdersClientProps) {

@@ -23,7 +23,13 @@ export function ProductCard({ product }: ProductCardProps) {
   const price = getProductPrice(product, country);
   const stock = getProductStock(product, country);
 
-  const stockStatus = stock === 0 ? "out" : stock <= 5 ? "low" : "in";
+  // Check country-specific activation
+  const isActiveForCountry =
+    country === "germany"
+      ? product.active_germany !== false
+      : product.active_denmark !== false;
+
+  const stockStatus = !isActiveForCountry || stock === 0 ? "out" : stock <= 5 ? "low" : "in";
 
   return (
     <Card className="group overflow-hidden transition-shadow hover:shadow-lg">
@@ -67,7 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <Button
             size="sm"
             onClick={() => addItem(product)}
-            disabled={stock === 0}
+            disabled={!isActiveForCountry || stock === 0}
             aria-label={t("addToCart")}
           >
             <ShoppingCart className="h-4 w-4" />

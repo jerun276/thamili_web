@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ProductCard } from "@/components/storefront/product-card";
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import type { Product } from "@/types";
 
 interface ProductsPageProps {
@@ -17,7 +18,12 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const params = await searchParams;
 
   const supabase = await createClient();
-  let query = supabase.from("products").select("*").eq("active", true);
+
+  let query = supabase
+    .from("products")
+    .select("*")
+    .eq("active", true)
+    .or("is_deleted.is.null,is_deleted.eq.false");
 
   if (params.category && params.category !== "all") {
     query = query.eq("category", params.category);
@@ -50,7 +56,17 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const to = from + perPage - 1;
   query = query.range(from, to);
 
-  const { data: products, error } = await query;
+  const { data: allProducts, error } = await query;
+
+  // Client-side filter for country-specific activation
+  // Country preference comes from the cart store (localStorage), so we show all active products
+  // and let the ProductCard handle country-specific display.
+  // However, we filter out products explicitly deactivated for both countries.
+  const products = (allProducts as Product[] | null)?.filter((p) => {
+    // If both country-specific flags are explicitly false, hide the product
+    if (p.active_germany === false && p.active_denmark === false) return false;
+    return true;
+  });
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -70,7 +86,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
       {/* Product Grid */}
       {products && products.length > 0 ? (
         <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {(products as Product[]).map((product) => (
+          {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
