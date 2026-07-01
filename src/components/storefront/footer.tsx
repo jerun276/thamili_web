@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div>
-            <Image src="/logo.png" alt="Thamili" width={100} height={32} className="h-8 w-auto brightness-0 invert" unoptimized />
+            <Image src="/logo.png" alt="Thamili" width={100} height={32} className="h-8 w-auto brightness-0 invert" style={{ width: "auto" }} unoptimized />
             <p className="mt-3 text-sm text-green-200">
               Fresh fish & vegetables delivered to your doorstep in Germany and Denmark.
             </p>

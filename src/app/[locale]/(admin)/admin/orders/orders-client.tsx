@@ -116,7 +116,7 @@ function OrderRow({
         <select
           value={order.status}
           onChange={(e) => handleStatusChange(e.target.value as OrderStatus)}
-          disabled={updating || order.status === "canceled" || order.status === "delivered"}
+          disabled={updating || order.status === "cancelled" || order.status === "delivered"}
           className="rounded border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-700 dark:bg-gray-900"
         >
           {STATUS_OPTIONS.map((s) => (

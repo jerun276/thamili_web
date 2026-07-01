@@ -8,12 +8,20 @@ export default async function DeliveriesPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: deliveries } = await supabase
-    .from("orders")
-    .select("*, users(name, phone), order_items(id, quantity)")
+  const { data: schedules } = await supabase
+    .from("delivery_schedule")
+    .select("*, orders(*, users(name, phone), order_items(id, quantity, products(name)))")
     .eq("delivery_partner_id", user?.id)
-    .in("status", ["confirmed", "out_for_delivery", "delivered"])
     .order("created_at", { ascending: false });
+
+  const deliveries = (schedules || [])
+    .filter((s: any) => s.orders)
+    .map((s: any) => ({
+      ...s.orders,
+      schedule_id: s.id,
+      schedule_status: s.status,
+      delivery_date: s.delivery_date,
+    }));
 
   return (
     <div>
@@ -21,7 +29,7 @@ export default async function DeliveriesPage() {
         {t("deliveries")}
       </h1>
 
-      <DeliveriesClient deliveries={deliveries || []} />
+      <DeliveriesClient deliveries={deliveries} />
     </div>
   );
 }

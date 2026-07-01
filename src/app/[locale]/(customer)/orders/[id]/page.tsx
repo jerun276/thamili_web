@@ -5,22 +5,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cancelOrderAction } from "@/actions/orders";
+import { PayNowButton } from "@/components/shared/pay-now-button";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ payment?: string }>;
 }
 
 const STATUS_STEPS = ["pending", "confirmed", "out_for_delivery", "delivered"];
 
-export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
+export default async function OrderDetailPage({ params, searchParams }: OrderDetailPageProps) {
   const { id } = await params;
+  const { payment } = await searchParams;
   const t = await getTranslations("orders");
   const supabase = await createClient();
 
-  const { data: order } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
+
+  const { data: order, error } = await supabase
     .from("orders")
     .select("*, order_items(*, products(name, image_url)), pickup_points(name, address)")
     .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
   if (!order) notFound();
@@ -29,17 +39,27 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      {payment === "success" && (
+        <div className="mb-6 rounded-md bg-green-50 p-4 text-sm text-green-700 dark:bg-green-950 dark:text-green-400">
+          Payment successful! Your order has been confirmed.
+        </div>
+      )}
+      {payment === "cancelled" && (
+        <div className="mb-6 rounded-md bg-yellow-50 p-4 text-sm text-yellow-700 dark:bg-yellow-950 dark:text-yellow-400">
+          Payment was cancelled. You can pay later using the button below.
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           Order #{order.id.slice(0, 8)}
         </h1>
-        <Badge variant={order.status === "canceled" ? "destructive" : "default"}>
+        <Badge variant={order.status === "cancelled" ? "destructive" : "default"}>
           {order.status.replace(/_/g, " ")}
         </Badge>
       </div>
 
       {/* Status Timeline */}
-      {order.status !== "canceled" && (
+      {order.status !== "cancelled" && (
         <div className="mt-8">
           <div className="flex items-center justify-between">
             {STATUS_STEPS.map((step, index) => (
@@ -128,11 +148,24 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
       {/* Cancel Button */}
       {order.status === "pending" && (
-        <form action={async () => { "use server"; await cancelOrderAction(order.id); }} className="mt-4">
-          <Button type="submit" variant="destructive">
-            {t("cancelOrder")}
-          </Button>
-        </form>
+        <div className="mt-4 flex items-center gap-3">
+          {order.payment_method === "online" && order.payment_status === "pending" && (
+            <PayNowButton
+              orderId={order.id}
+              items={order.order_items?.map((item: any) => ({
+                name: item.products?.name || "Product",
+                quantity: item.quantity,
+                price: item.price,
+              })) || []}
+              totalAmount={order.total_amount}
+            />
+          )}
+          <form action={async () => { "use server"; await cancelOrderAction(order.id); }}>
+            <Button type="submit" variant="destructive">
+              {t("cancelOrder")}
+            </Button>
+          </form>
+        </div>
       )}
     </div>
   );

@@ -20,7 +20,7 @@ export function DeliverySidebar() {
     <aside className="sticky top-0 flex h-screen w-56 flex-col border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-gray-200 px-4 dark:border-gray-800">
-        <Image src="/logo.png" alt="Thamili" width={100} height={32} className="h-8 w-auto" unoptimized />
+        <Image src="/logo.png" alt="Thamili" width={100} height={32} className="h-8 w-auto" style={{ width: "auto" }} unoptimized />
       </div>
 
       {/* Navigation */}

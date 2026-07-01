@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/config";
 import { loginAction } from "@/actions/auth";
 import { useActionState } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -40,6 +41,7 @@ export default function LoginPage() {
               type="text"
               required
               autoComplete="username"
+              disabled={pending}
             />
           </div>
 
@@ -51,11 +53,13 @@ export default function LoginPage() {
               type="password"
               required
               autoComplete="current-password"
+              disabled={pending}
             />
           </div>
 
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "..." : t("signIn")}
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? "Signing in..." : t("signIn")}
           </Button>
 
           <div className="text-center text-sm text-gray-500">

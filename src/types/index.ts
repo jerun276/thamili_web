@@ -9,13 +9,13 @@ export type OrderStatus =
   | "delivered"
   | "cancelled";
 
-export type PaymentMethod = "card" | "cod";
+export type PaymentMethod = "online" | "cod";
 
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
 export type DeliveryMethod = "home" | "pickup";
 
-export type OrderType = "online" | "van_sale";
+export type OrderType = "regular" | "van_sale";
 
 export type ProductCategory = "fresh" | "frozen";
 

@@ -43,7 +43,7 @@ export function AdminSidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center justify-between border-b border-gray-200 px-4 dark:border-gray-800">
         {!collapsed && (
-          <Image src="/logo.png" alt="Thamili" width={100} height={32} className="h-8 w-auto" unoptimized />
+          <Image src="/logo.png" alt="Thamili" width={100} height={32} className="h-8 w-auto" style={{ width: "auto" }} unoptimized />
         )}
         <Button
           variant="ghost"

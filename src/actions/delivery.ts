@@ -9,6 +9,19 @@ export async function updateDeliveryStatusAction(
 ) {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: schedule } = await supabase
+    .from("delivery_schedule")
+    .select("id, delivery_partner_id")
+    .eq("order_id", orderId)
+    .single();
+
+  if (!schedule || schedule.delivery_partner_id !== user.id) {
+    return { error: "Not authorized to update this delivery" };
+  }
+
   const { error } = await supabase
     .from("orders")
     .update({ status, updated_at: new Date().toISOString() })
@@ -17,6 +30,20 @@ export async function updateDeliveryStatusAction(
   if (error) {
     return { error: error.message };
   }
+
+  const scheduleUpdate: Record<string, any> = {
+    status: status === "out_for_delivery" ? "in_transit" : status === "delivered" ? "delivered" : schedule.id ? "assigned" : "assigned",
+    updated_at: new Date().toISOString(),
+  };
+
+  if (status === "delivered") {
+    scheduleUpdate.actual_delivery_time = new Date().toISOString();
+  }
+
+  await supabase
+    .from("delivery_schedule")
+    .update(scheduleUpdate)
+    .eq("id", schedule.id);
 
   revalidatePath("/delivery/deliveries");
   revalidatePath("/admin/orders");
@@ -31,6 +58,11 @@ export async function createVanSaleAction(orderData: {
 }) {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== orderData.delivery_partner_id) {
+    return { error: "Unauthorized" };
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -42,7 +74,6 @@ export async function createVanSaleAction(orderData: {
       status: "delivered",
       payment_status: "paid",
       order_type: "van_sale",
-      delivery_partner_id: orderData.delivery_partner_id,
     })
     .select()
     .single();
@@ -67,6 +98,15 @@ export async function createVanSaleAction(orderData: {
     return { error: itemsError.message };
   }
 
+  await supabase.from("delivery_schedule").insert({
+    order_id: order.id,
+    delivery_partner_id: orderData.delivery_partner_id,
+    delivery_date: new Date().toISOString().split("T")[0],
+    status: "delivered",
+    actual_delivery_time: new Date().toISOString(),
+  });
+
   revalidatePath("/delivery/van-sales");
   return { success: true, orderId: order.id };
 }
+

@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/config";
 import { PickupPointMap } from "@/components/shared/pickup-point-map";
+import { deletePickupPointAction } from "@/actions/pickup-points";
 import { useTranslations } from "next-intl";
+import { Trash2 } from "lucide-react";
 import type { PickupPoint } from "@/types";
 
 interface PickupPointsClientProps {
@@ -77,11 +79,18 @@ export function PickupPointsClient({ pickupPoints }: PickupPointsClientProps) {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/pickup-points/${point.id}/edit`}>
-                          Edit
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/admin/pickup-points/${point.id}/edit`}>
+                            Edit
+                          </Link>
+                        </Button>
+                        <form action={async () => { await deletePickupPointAction(point.id); }}>
+                          <Button type="submit" variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 ))}

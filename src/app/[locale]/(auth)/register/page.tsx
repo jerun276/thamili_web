@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Link } from "@/i18n/config";
 import { registerAction } from "@/actions/auth";
 import { useActionState } from "react";
+import { Loader2 } from "lucide-react";
 
 export default function RegisterPage() {
   const t = useTranslations("auth");
@@ -34,26 +35,27 @@ export default function RegisterPage() {
 
           <div className="space-y-2">
             <Label htmlFor="name">{t("name")}</Label>
-            <Input id="name" name="name" type="text" required />
+            <Input id="name" name="name" type="text" required disabled={pending} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="username">{t("username")}</Label>
-            <Input id="username" name="username" type="text" required />
+            <Input id="username" name="username" type="text" required disabled={pending} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="phone">{t("phone")}</Label>
-            <Input id="phone" name="phone" type="tel" required />
+            <Input id="phone" name="phone" type="tel" required disabled={pending} />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">{t("password")}</Label>
-            <Input id="password" name="password" type="password" required minLength={6} />
+            <Input id="password" name="password" type="password" required minLength={6} disabled={pending} />
           </div>
 
           <Button type="submit" className="w-full" disabled={pending}>
-            {pending ? "..." : t("signUp")}
+            {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {pending ? "Creating account..." : t("signUp")}
           </Button>
 
           <div className="text-center text-sm text-gray-500">

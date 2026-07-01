@@ -3,8 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Link } from "@/i18n/config";
+import { removeDeliveryPartnerAction } from "@/actions/delivery-partners";
 
 export default async function AdminDeliveryPartnersPage() {
   const t = await getTranslations("admin");
@@ -40,6 +41,7 @@ export default async function AdminDeliveryPartnersPage() {
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Phone</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Email</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-500">Joined</th>
+                  <th className="px-4 py-3 text-right font-medium text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -59,6 +61,13 @@ export default async function AdminDeliveryPartnersPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-500 text-xs">
                       {new Date(partner.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <form action={async () => { "use server"; await removeDeliveryPartnerAction(partner.id); }}>
+                        <Button type="submit" variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </form>
                     </td>
                   </tr>
                 ))}

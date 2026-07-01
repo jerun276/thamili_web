@@ -129,7 +129,7 @@ export function Navbar() {
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="Thamili" width={120} height={40} className="h-9 w-auto" priority unoptimized />
+            <Image src="/logo.png" alt="Thamili" width={120} height={40} className="h-9 w-auto" style={{ width: "auto" }} priority unoptimized />
           </Link>
 
           {/* Desktop Nav */}

@@ -16,6 +16,34 @@ export async function createOrderAction(orderData: {
 }) {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user || user.id !== orderData.user_id) {
+    return { error: "Unauthorized" };
+  }
+
+  const stockField = orderData.country === "denmark" ? "stock_denmark" : "stock_germany";
+
+  const productIds = orderData.items.map((item) => item.product_id);
+  const { data: products, error: productsError } = await supabase
+    .from("products")
+    .select("id, name, stock_germany, stock_denmark")
+    .in("id", productIds);
+
+  if (productsError || !products) {
+    return { error: "Failed to check product availability" };
+  }
+
+  for (const item of orderData.items) {
+    const product = products.find((p) => p.id === item.product_id);
+    if (!product) {
+      return { error: `Product not found` };
+    }
+    const availableStock = Number(product[stockField]);
+    if (availableStock < item.quantity) {
+      return { error: `Insufficient stock for "${product.name}". Available: ${availableStock}` };
+    }
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -27,8 +55,9 @@ export async function createOrderAction(orderData: {
       delivery_address: orderData.delivery_address,
       pickup_point_id: orderData.pickup_point_id,
       status: "pending",
-      payment_status: orderData.payment_method === "cod" ? "pending" : "pending",
+      payment_status: "pending",
       order_type: "regular",
+      order_date: new Date().toISOString().split("T")[0],
     })
     .select()
     .single();
@@ -53,12 +82,34 @@ export async function createOrderAction(orderData: {
     return { error: itemsError.message };
   }
 
+  for (const item of orderData.items) {
+    const product = products.find((p) => p.id === item.product_id)!;
+    const newStock = Number(product[stockField]) - item.quantity;
+    await supabase
+      .from("products")
+      .update({ [stockField]: newStock })
+      .eq("id", item.product_id);
+  }
+
   revalidatePath("/orders");
   return { success: true, orderId: order.id };
 }
 
 export async function updateOrderStatusAction(orderId: string, status: OrderStatus) {
   const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { error: "Only admins can update order status" };
+  }
 
   const { error } = await supabase
     .from("orders")
@@ -77,6 +128,33 @@ export async function updateOrderStatusAction(orderId: string, status: OrderStat
 export async function cancelOrderAction(orderId: string) {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("user_id, status")
+    .eq("id", orderId)
+    .single();
+
+  if (!order) return { error: "Order not found" };
+
+  if (order.user_id !== user.id) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    if (profile?.role !== "admin") {
+      return { error: "Not authorized to cancel this order" };
+    }
+  }
+
+  if (order.status !== "pending") {
+    return { error: "Only pending orders can be cancelled" };
+  }
+
   const { error } = await supabase
     .from("orders")
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
@@ -94,7 +172,19 @@ export async function cancelOrderAction(orderId: string) {
 export async function assignDeliveryPartnerAction(orderId: string, partnerId: string) {
   const supabase = await createClient();
 
-  // Check if a delivery schedule already exists for this order
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    return { error: "Only admins can assign delivery partners" };
+  }
+
   const { data: existing } = await supabase
     .from("delivery_schedule")
     .select("id")
@@ -102,7 +192,6 @@ export async function assignDeliveryPartnerAction(orderId: string, partnerId: st
     .single();
 
   if (existing) {
-    // Update existing schedule
     const { error } = await supabase
       .from("delivery_schedule")
       .update({
@@ -115,7 +204,6 @@ export async function assignDeliveryPartnerAction(orderId: string, partnerId: st
       return { error: error.message };
     }
   } else {
-    // Create new delivery schedule
     const { error } = await supabase
       .from("delivery_schedule")
       .insert({
